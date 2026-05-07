@@ -98,6 +98,7 @@ Presenter - презентер содержит основную логику п
 `emit<T extends object>(event: string, data?: T): void` - инициализация события. При вызове события в метод передается название события и объект с данными, который будет использован как аргумент для вызова обработчика.  
 `trigger<T extends object>(event: string, context?: Partial<T>): (data: T) => void` - возвращает функцию, при вызове которой инициализируется требуемое в параметрах событие с передачей в него данных из второго параметра.
 
+
 ### Данные
 #### IProduct - интерфейс, описывающий сущность товара  
 `interface IProduct {`  
@@ -111,10 +112,27 @@ Presenter - презентер содержит основную логику п
 
 #### IBuyer - интерфейс, описывающий сущность покупателя  
 `interface IBuyer {`  
-  `payment: 'card' | 'cash' | '',` - способ оплаты (карта | при получении | не выбрано)  
+  `payment: TPaymentType,` - способ оплаты (type TPaymentType = '' | 'online' | 'offline')  
   `address: string,` - адрес доставки  
   `email: string,` - email покупателя  
   `phone: string` - номер телефона покупателя  
+`}`  
+
+#### TDataGetFromServer - тип данных, получаемых с сервера при запросе объекта с массивом товаров  
+`type TDataGetFromServer = {`  
+  `total : number,`  
+  `items : IProduct[]`  
+`}`  
+
+#### TDataPostToServer - тип данных, передаваемых на сервер (информация о покупателе + параметры заказа)
+
+`type TDataPostToServer = {`  
+  `payment : TPaymentType,`  
+  `address : string,`  
+  `email : string,`  
+  `phone : string,`  
+  `total : number,`  
+  `items : string[]`  
 `}`  
 
 ### Модели данных  
@@ -122,45 +140,58 @@ Presenter - презентер содержит основную логику п
 Каталог на главной странице.  
 
 Поля класса:  
-`products : IProduct[]` - хранит массив всех товаров;  
-`chosenProduct : IProduct` - хранит товар, выбранный для подробного отображения.  
+`products : IProduct[] = []` - хранит массив всех товаров;  
+`chosenProduct : IProduct | undefined` - хранит товар, выбранный для подробного отображения.  
 
 Методы класса:  
-`setProducts(products[] : IProduct[]) : IProduct[]` - сохранение массива товаров полученного в параметрах метода;  
+`setProducts(products : IProduct[]) : IProduct[]` - сохранение массива товаров полученного в параметрах метода;  
 `getProducts() : IProduct[]` - получение массива товаров из модели;  
-`getProductById(id : number) : IProduct` - получение одного товара по его id;  
+`getProductById(id : string) : IProduct | void` - получение одного товара по его id;  
 `setChosenProduct(product : IProduct) : IProduct` - сохранение товара для подробного отображения;  
-`getChosenProduct(product : IProduct) : IProduct` - получение товара для подробного отображения.  
+`getChosenProduct() : IProduct | void` - получение товара для подробного отображения.  
 
 
 #### Класс ShoppingCart  
 Корзина выбранных для покупки товаров.  
 
 Поля класса:  
-`productsToBuy : IProduct[]` - хранит массив товаров, выбранных покупателем для покупки.  
+`productsToBuy : IProduct[] = []` - хранит массив товаров, выбранных покупателем для покупки.  
 
 Методы класса:  
-`getProductsToBuy(productsToBuy[] : IProduct[]) : IProduct[]` - получение массива товаров, которые находятся в корзине;  
+`getProductsToBuy() : IProduct[]` - получение массива товаров, которые находятся в корзине;  
 `addProductToCart(product : IProduct) : void` - добавление товара, который был получен в параметре, в массив корзины;  
 `deleteProductFromCart(product : IProduct) : void` - удаление товара, полученного в параметре из массива корзины;  
 `clearCart() : void` - очистка корзины;  
-`getOverallPrice() : number` - получение стоимости всех товаров в корзине;  
+`getTotalPrice() : number` - получение стоимости всех товаров в корзине;  
 `getProductsAmount() : number` - получение количества товаров в корзине;  
-`isInStock(id : number) : bool` - проверка наличия товара в корзине по его id, полученного в параметр метода.  
+`isInStock(id : string) : boolean` - проверка наличия товара в корзине по его id, полученного в параметр метода.  
 
 
 #### Класс Buyer  
 Покупатель.  
 
-Поля класса:  
-`paymentType : string` - вид оплаты;  
-`address : string` - адреc;  
-`phone : string` - телефон;  
-`email : string` - email.  
+Полe класса:  
+`buyersData : IBuyer = {`  
+  `payment : '',`  
+  `address : '',`  
+  `email : '',`  
+  `phone : ';'`  
+`}`  
 
 Методы класса:  
 
-`saveBuyersData(BuyersData : IBuyer) : void` - сохранение данных в модели;  
+`saveBuyersData(data : IBuyer) : void` - сохранение данных в модели;  
 `getBuyersData() : IBuyer` - получение всех данных покупателя;  
 `clearBuyersData() : void` - очистка данных покупателя;  
-`validateBuyersData(BuyersData : IBuyer) : object` - валидация данных. Возвращает объект, поля которого соответствуют полям класса, а значения - тексту ошибки.  
+`validateBuyersData() : object` - валидация данных. Возвращает объект, поля которого соответствуют полям типа IBuyer (payment, address, email, phone), а значения - тексту ошибки.  
+
+
+### Слой коммуникации  
+#### Класс ApiCommunication  
+Отвечает за получение данных с сервера и отправку данных на сервер. Использует функциональность класса `API`.  
+
+Не имеет полей.  
+
+Методы класса:  
+`getProducts() : Promise<TDataGetFromServer>` - получение с сервера объекта с массивом товаров, использует метод get класса Api;  
+`postProducts(data : TDataPostToServer) : Promise<TDataPostToServer>` - отправка на сервер объекта с данными о покупателе и выбранных товарахю 
