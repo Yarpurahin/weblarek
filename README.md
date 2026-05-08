@@ -105,34 +105,38 @@ Presenter - презентер содержит основную логику п
 `  id: string,` - id товара  
 `  title: string,` - название товара  
 `  image: string,` - картинка товара  
-`  category: string,` - категория товара  
 `  price: number | null,` - цена товара (null = бесценно)  
 `  description: string` - развернутое описание товара  
 `}`  
 
 #### IBuyer - интерфейс, описывающий сущность покупателя  
 `interface IBuyer {`  
-  `payment: TPaymentType,` - способ оплаты (type TPaymentType = '' | 'online' | 'offline')  
+  `payment: TPaymentType | '',` - способ оплаты (type TPaymentType = 'online' | 'offline')  
   `address: string,` - адрес доставки  
   `email: string,` - email покупателя  
   `phone: string` - номер телефона покупателя  
 `}`  
 
-#### TDataGetFromServer - тип данных, получаемых с сервера при запросе объекта с массивом товаров  
-`type TDataGetFromServer = {`  
+`type TValidationErrors = Partial<Record<keyof IBuyer, string>>` - тип, содержащий ошибки валидации пользовательских данных  
+
+#### TProductsResponse - тип данных, получаемых с сервера при запросе объекта с массивом товаров  
+`type TProductsResponse = {`  
   `total : number,`  
   `items : IProduct[]`  
 `}`  
 
-#### TDataPostToServer - тип данных, передаваемых на сервер (информация о покупателе + параметры заказа)
+#### IOrderData - интерфейс данных, передаваемых на сервер (информация о покупателе + параметры заказа)
 
-`type TDataPostToServer = {`  
-  `payment : TPaymentType,`  
-  `address : string,`  
-  `email : string,`  
-  `phone : string,`  
+`interface IOrderData extends IBuyer {`   
   `total : number,`  
   `items : string[]`  
+`}`  
+
+#### type IOrderResponse - тип ответа сервера на POST-запрос  
+
+`type TOrderResponse = {`  
+    `id : string,`  
+    `total : number`  
 `}`  
 
 ### Модели данных  
@@ -141,14 +145,14 @@ Presenter - презентер содержит основную логику п
 
 Поля класса:  
 `products : IProduct[] = []` - хранит массив всех товаров;  
-`chosenProduct : IProduct | undefined` - хранит товар, выбранный для подробного отображения.  
+`chosenProduct : IProduct | null` - хранит товар, выбранный для подробного отображения.  
 
 Методы класса:  
-`setProducts(products : IProduct[]) : IProduct[]` - сохранение массива товаров полученного в параметрах метода;  
+`setProducts(products : IProduct[]) : void` - сохранение массива товаров полученного в параметрах метода;  
 `getProducts() : IProduct[]` - получение массива товаров из модели;  
-`getProductById(id : string) : IProduct | void` - получение одного товара по его id;  
-`setChosenProduct(product : IProduct) : IProduct` - сохранение товара для подробного отображения;  
-`getChosenProduct() : IProduct | void` - получение товара для подробного отображения.  
+`getProductById(id : string) : IProduct | undefined` - получение одного товара по его id;  
+`setChosenProduct(product : IProduct) : void` - сохранение товара для подробного отображения;  
+`getChosenProduct() : IProduct | null` - получение товара для подробного отображения.  
 
 
 #### Класс ShoppingCart  
@@ -180,10 +184,10 @@ Presenter - презентер содержит основную логику п
 
 Методы класса:  
 
-`saveBuyersData(data : IBuyer) : void` - сохранение данных в модели;  
+`saveBuyersData(data : Partial<IBuyer>) : void` - сохранение данных в модели;  
 `getBuyersData() : IBuyer` - получение всех данных покупателя;  
 `clearBuyersData() : void` - очистка данных покупателя;  
-`validateBuyersData() : object` - валидация данных. Возвращает объект, поля которого соответствуют полям типа IBuyer (payment, address, email, phone), а значения - тексту ошибки.  
+`validateBuyersData() : TValidationErrors` - валидация данных. Возвращает объект, поля которого соответствуют полям типа IBuyer (payment, address, email, phone), а значения - тексту ошибки.  
 
 
 ### Слой коммуникации  
@@ -193,5 +197,5 @@ Presenter - презентер содержит основную логику п
 Не имеет полей.  
 
 Методы класса:  
-`getProducts() : Promise<TDataGetFromServer>` - получение с сервера объекта с массивом товаров, использует метод get класса Api;  
-`postProducts(data : TDataPostToServer) : Promise<TDataPostToServer>` - отправка на сервер объекта с данными о покупателе и выбранных товарахю 
+`getProducts() : Promise<TProductsResponse>` - получение с сервера объекта с массивом товаров, использует метод get класса Api;  
+`postProducts(data : IOrderData) : Promise<TOrderResponse>` - отправка на сервер объекта с данными о покупателе и выбранных товарах 

@@ -6,8 +6,7 @@ import  './utils/constants';
 import {Buyer} from './components/Models/buyer'
 import {ShoppingCart} from './components/Models/shoppingCart'
 import {IBuyer} from './types/index';
-import './components/base/ApiCommunication'
-import { ApiCommunication } from './components/base/ApiCommunication';
+import { ApiCommunication } from './components/ApiCommunication/ApiCommunication';
 import { API_URL } from './utils/constants';
 import { apiProducts } from './utils/data';
 
@@ -37,7 +36,7 @@ cart.addProductToCart(testData[2])
 console.log('3 items added to the cart:')
 console.log(cart.getProductsToBuy())
 
-cart.deleteProductFromCart(testData[0])
+cart.deleteProductFromCart(testData[0].id)
 
 console.log('1st item deleted from the cart:')
 console.log(cart.getProductsToBuy())
@@ -72,7 +71,7 @@ const testBuyersData : IBuyer = {
 
 const testBuyersDataWRONG : IBuyer = {
     payment : 'online',
-    address : '-wrong-address',
+    address : '',
     email : 'exampleemail@mail.com',
     phone : ''
 }
@@ -107,7 +106,18 @@ const apiCatalog = new Catalog
 const api = new Api(API_URL);
 const apiCom = new ApiCommunication(api);
 
-apiCatalog.setProducts((await apiCom.getProducts()).items)
+async function loadProducts() {
+    try {
+        const response = await apiCom.getProducts()
+        apiCatalog.setProducts(response.items)
+        console.log('catalog filled from server:')
+        console.log(apiCatalog.getProducts())
+    }
+    catch (err) {
+        console.log(`Achtung! ${err}`)
+    }
+}
 
-console.log('catalog filled from server:')
-console.log(apiCatalog.getProducts())
+loadProducts()
+
+

@@ -14,24 +14,27 @@ export interface IProduct {
 }
 
 export interface IBuyer {
-    payment : TPaymentType,
+    payment : TPaymentType | '',
     address : string,
     email : string,
     phone : string
 }
 
-export type TPaymentType = '' | 'online' | 'offline'
+export type TPaymentType = 'online' | 'offline'
 
-export type TDataGetFromServer = {
+export type TValidationErrors = Partial<Record<keyof IBuyer, string>>
+
+export type TProductsResponse = {
     total : number,
     items : IProduct[]
 }
 
-export type TDataPostToServer = {
-    payment : TPaymentType,
-    address : string,
-    email : string,
-    phone : string,
+export interface IOrderData extends IBuyer {
     total : number,
     items : string[]
+}
+
+export type TOrderResponse = {
+    id : string,
+    total : number
 }

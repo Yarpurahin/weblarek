@@ -11,13 +11,11 @@ export class ShoppingCart {
     this.productsToBuy.push(product);
   }
 
-  deleteProductFromCart (product : IProduct) : void {
-    for (let i : number = 0; i < this.productsToBuy.length; i++) {
-      if (this.productsToBuy[i] === product) {
-        this.productsToBuy.splice(i, 1);
-      }     
-    }
-  }
+  deleteProductFromCart(id: string): void {
+    this.productsToBuy = this.productsToBuy.filter(
+      (product: IProduct) => product.id !== id
+    );
+  }  
 
   clearCart () : void {
     this.productsToBuy = [];
@@ -26,7 +24,7 @@ export class ShoppingCart {
   getTotalPrice () : number {
     let total : number = 0;
     this.productsToBuy.forEach((product) => {
-      if (typeof(product.price) === "number") {total += product.price}
+      total += product.price ?? 0
     })
     return total;
   }
