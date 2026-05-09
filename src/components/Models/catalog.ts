@@ -13,11 +13,7 @@ export class Catalog {
   }
 
   getProductById(id : string) : IProduct | undefined {
-    return this.products.find(() => {
-      for (let product of this.products) {
-        if (product.id === id) return product;
-      }
-    })
+    return this.products.find(product => product.id === id);
   }
 
   setChosenProduct(product : IProduct) : void {

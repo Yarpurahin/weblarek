@@ -33,7 +33,7 @@ export class Buyer {
 
   
   validateBuyersData () : TValidationErrors {
-    let errorObj : TValidationErrors = {}
+    const errorObj : TValidationErrors = {}
 
     if (!this.buyersData.email) {errorObj.email = 'Укажите email'}
     
