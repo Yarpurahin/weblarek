@@ -1,7 +1,7 @@
 import {ensureElement} from '../../../utils/utils';
-import {categoryMap} from '../../../utils/constants'
-import {ICard, Card} from './Card'
-import {ICardActions} from './CardCatalog'
+import {categoryMap} from '../../../utils/constants';
+import {ICard, Card} from './Card';
+import {ICardActions} from './CardCatalog';
 
 export interface ICardPreview extends ICard {
   category: string;

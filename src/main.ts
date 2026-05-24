@@ -20,6 +20,7 @@ import {Gallery} from './components/View/Gallery';
 import {Card} from './components/View/Cards/Card';
 import { CardCatalog } from './components/View/Cards/CardCatalog';
 import {CardPreview} from './components/View/Cards/CardPreview';
+import {CardBasket} from './components/View/Cards/CardBasket';
 
 // Загрузили информацию о товарах с сервера (10 шт)
 const apiCatalog = new Catalog;
@@ -69,3 +70,6 @@ const header = new Header(events, ensureElement<HTMLElement>('.header')) // Об
 
 loadProducts(); // Сформировали карточки, вывели галерею
 
+const gallery4test = ensureElement<HTMLElement>('.gallery'); // ссылка на HTML-элемент <main class="gallery"></main>
+
+gallery4test.replaceChildren(); // Пихать сюда HTMLElement, чтобы протестить

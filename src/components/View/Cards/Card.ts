@@ -1,7 +1,5 @@
 import {ensureElement} from '../../../utils/utils';
 import {Component} from '../../base/Component';
-import {IEvents} from '../../base/Events';
-import {categoryMap} from '../../../utils/constants'
 
 export interface ICard {
   title: string;
