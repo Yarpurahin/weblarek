@@ -10,7 +10,8 @@ export interface IProduct {
     title : string,
     image : string,
     price : number | null, 
-    description : string
+    description : string,
+    category: string
 }
 
 export interface IBuyer {
