@@ -139,63 +139,357 @@ Presenter - презентер содержит основную логику п
     `total : number`  
 `}`  
 
-### Модели данных  
-#### Класс Catalog  
-Каталог на главной странице.  
+## Модели данных
 
-Поля класса:  
-`products : IProduct[] = []` - хранит массив всех товаров;  
-`chosenProduct : IProduct | null` - хранит товар, выбранный для подробного отображения.  
+### Класс `Catalog`
 
-Методы класса:  
-`setProducts(products : IProduct[]) : void` - сохранение массива товаров полученного в параметрах метода;  
-`getProducts() : IProduct[]` - получение массива товаров из модели;  
-`getProductById(id : string) : IProduct | undefined` - получение одного товара по его id;  
-`setChosenProduct(product : IProduct) : void` - сохранение товара для подробного отображения;  
-`getChosenProduct() : IProduct | null` - получение товара для подробного отображения.  
+Модель каталога товаров.
 
+#### Поля класса
 
-#### Класс ShoppingCart  
-Корзина выбранных для покупки товаров.  
+`products: IProduct[] = []` — массив всех товаров;
+`chosenProduct: IProduct | null = null` — выбранный товар;
+`events: IEvents` — брокер событий.
 
-Поля класса:  
-`productsToBuy : IProduct[] = []` - хранит массив товаров, выбранных покупателем для покупки.  
+#### Конструктор
 
-Методы класса:  
-`getProductsToBuy() : IProduct[]` - получение массива товаров, которые находятся в корзине;  
-`addProductToCart(product : IProduct) : void` - добавление товара, который был получен в параметре, в массив корзины;  
-`deleteProductFromCart(product : IProduct) : void` - удаление товара, полученного в параметре из массива корзины;  
-`clearCart() : void` - очистка корзины;  
-`getTotalPrice() : number` - получение стоимости всех товаров в корзине;  
-`getProductsAmount() : number` - получение количества товаров в корзине;  
-`isInStock(id : string) : boolean` - проверка наличия товара в корзине по его id, полученного в параметр метода.  
+`constructor(events: IEvents)` — принимает брокер событий.
 
+#### Методы
 
-#### Класс Buyer  
-Покупатель.  
+`setProducts(products: IProduct[]): void` — сохраняет массив товаров и генерирует событие `catalog:changed`;
+`getProducts(): IProduct[]` — возвращает массив товаров;
+`getProductById(id: string): IProduct | undefined` — возвращает товар по `id`;
+`setChosenProduct(product: IProduct): void` — сохраняет выбранный товар и генерирует событие `catalog:select`;
+`getChosenProduct(): IProduct | null` — возвращает выбранный товар.
 
-Полe класса:  
-`buyersData : IBuyer = {`  
-  `payment : '',`  
-  `address : '',`  
-  `email : '',`  
-  `phone : ';'`  
-`}`  
+---
 
-Методы класса:  
+### Класс `ShoppingCart`
 
-`saveBuyersData(data : Partial<IBuyer>) : void` - сохранение данных в модели;  
-`getBuyersData() : IBuyer` - получение всех данных покупателя;  
-`clearBuyersData() : void` - очистка данных покупателя;  
-`validateBuyersData() : TValidationErrors` - валидация данных. Возвращает объект, поля которого соответствуют полям типа IBuyer (payment, address, email, phone), а значения - тексту ошибки.  
+Модель корзины.
 
+#### Поля класса
 
-### Слой коммуникации  
-#### Класс ApiCommunication  
-Отвечает за получение данных с сервера и отправку данных на сервер. Использует функциональность класса `API`.  
+`productsToBuy: IProduct[] = []` — массив товаров в корзине;
+`events: IEvents` — брокер событий.
 
-Не имеет полей.  
+#### Конструктор
 
-Методы класса:  
-`getProducts() : Promise<TProductsResponse>` - получение с сервера объекта с массивом товаров, использует метод get класса Api;  
-`postProducts(data : IOrderData) : Promise<TOrderResponse>` - отправка на сервер объекта с данными о покупателе и выбранных товарах 
+`constructor(events: IEvents)` — принимает брокер событий.
+
+#### Методы
+
+`getProductsToBuy(): IProduct[]` — возвращает товары из корзины;
+`addProductToCart(product: IProduct): void` — добавляет товар в корзину, если его там ещё нет;
+`deleteProductFromCart(id: string): void` — удаляет товар из корзины по `id`;
+`clearCart(): void` — очищает корзину;
+`getTotalPrice(): number` — возвращает общую стоимость товаров;
+`getProductsAmount(): number` — возвращает количество товаров;
+`isInStock(id: string): boolean` — проверяет, есть ли товар в корзине;
+`changed(): void` — генерирует событие `basket:changed`.
+
+---
+
+### Класс `Buyer`
+
+Модель данных покупателя.
+
+#### Поля класса
+
+`buyersData: IBuyer` — данные покупателя: способ оплаты, адрес, email и телефон;
+`events: IEvents` — брокер событий.
+
+#### Конструктор
+
+`constructor(events: IEvents)` — принимает брокер событий.
+
+#### Методы
+
+`saveBuyersData(data: Partial<IBuyer>): void` — сохраняет часть данных покупателя и генерирует событие `buyer:changed`;
+`getBuyersData(): IBuyer` — возвращает данные покупателя;
+`clearBuyersData(): void` — очищает данные покупателя;
+`validateBuyersData(): TValidationErrors` — проверяет заполненность данных и возвращает объект ошибок.
+
+---
+
+## Компоненты представления
+
+### Класс `Card<T extends ICard = ICard>`
+
+Родительский класс для карточек товара.
+
+#### Поля класса
+
+`titleElement: HTMLElement` — элемент названия товара;
+`priceElement: HTMLSpanElement` — элемент цены товара.
+
+#### Конструктор
+
+`constructor(container: HTMLElement)` — принимает DOM-элемент карточки.
+
+#### Сеттеры
+
+`set title(value: string)` — устанавливает название товара;
+`set price(value: number | null)` — устанавливает цену товара.
+
+---
+
+### Класс `CardCatalog`
+
+Карточка товара в каталоге.
+
+#### Поля класса
+
+`cardCategory: HTMLSpanElement` — элемент категории товара;
+`cardImage: HTMLImageElement` — изображение товара;
+`actions: ICardActions` — объект с обработчиком клика.
+
+#### Конструктор
+
+`constructor(actions: ICardActions, container: HTMLElement)` — принимает обработчики действий и DOM-элемент карточки.
+
+#### Сеттеры
+
+`set category(value: string)` — устанавливает категорию и CSS-модификатор из `categoryMap`;
+`set image(value: string)` — устанавливает изображение товара.
+
+---
+
+### Класс `CardPreview`
+
+Карточка подробного просмотра товара.
+
+#### Поля класса
+
+`cardCategory: HTMLSpanElement` — категория товара;
+`cardImage: HTMLImageElement` — изображение товара;
+`cardDescription: HTMLElement` — описание товара;
+`cardButton: HTMLButtonElement` — кнопка действия с товаром.
+
+#### Конструктор
+
+`constructor(actions: ICardActions, container: HTMLElement)` — принимает обработчики действий и DOM-элемент карточки.
+
+#### Сеттеры
+
+`set category(value: string)` — устанавливает категорию;
+`set image(value: string)` — устанавливает изображение;
+`set description(value: string)` — устанавливает описание;
+`set buttonText(value: string)` — устанавливает текст кнопки;
+`set buttonDisabled(value: boolean)` — включает или отключает кнопку.
+
+---
+
+### Класс `CardBasket`
+
+Карточка товара в корзине.
+
+#### Поля класса
+
+`cardIndex: HTMLElement` — порядковый номер товара;
+`cardDeleteButton: HTMLButtonElement` — кнопка удаления товара.
+
+#### Конструктор
+
+`constructor(actions: ICardActions, container: HTMLElement)` — принимает обработчик действия и DOM-элемент карточки.
+
+#### Сеттеры
+
+`set index(value: number)` — устанавливает номер товара в корзине.
+
+---
+
+### Класс `Modal`
+
+Компонент модального окна.
+
+#### Поля класса
+
+`closeButton: HTMLButtonElement` — кнопка закрытия;
+`contentElement: HTMLElement` — контейнер содержимого;
+`modalContainer: HTMLElement` — внутренний контейнер модального окна;
+`events: IEvents` — брокер событий.
+
+#### Конструктор
+
+`constructor(events: IEvents, container: HTMLElement)` — принимает брокер событий и DOM-элемент модального окна.
+
+#### Сеттеры
+
+`set content(value: HTMLElement)` — устанавливает содержимое модального окна.
+
+#### Методы
+
+`open(): void` — открывает модальное окно;
+`close(): void` — закрывает модальное окно;
+`render(data: IModal): HTMLElement` — устанавливает содержимое и открывает модальное окно.
+
+---
+
+### Класс `Basket`
+
+Компонент корзины.
+
+#### Поля класса
+
+`listElement: HTMLElement` — список товаров;
+`totalElement: HTMLElement` — итоговая стоимость;
+`orderButton: HTMLButtonElement` — кнопка оформления заказа;
+`events: IEvents` — брокер событий.
+
+#### Конструктор
+
+`constructor(events: IEvents, container: HTMLElement)` — принимает брокер событий и DOM-элемент корзины.
+
+#### Сеттеры
+
+`set items(items: HTMLElement[])` — отображает товары или текст `Корзина пуста`;
+`set total(value: number)` — устанавливает итоговую стоимость;
+`set buttonDisabled(value: boolean)` — включает или отключает кнопку оформления.
+
+---
+
+## Компоненты форм
+
+### Класс `Form<T extends object>`
+
+Родительский класс для форм заказа.
+
+#### Поля класса
+
+`submitButton: HTMLButtonElement` — кнопка отправки формы;
+`errorsElement: HTMLElement` — элемент ошибок;
+`events: IEvents` — брокер событий;
+`container: HTMLFormElement` — DOM-элемент формы.
+
+#### Конструктор
+
+`constructor(events: IEvents, container: HTMLFormElement)` — принимает брокер событий и DOM-элемент формы.
+
+#### Сеттеры
+
+`set valid(value: boolean)` — управляет доступностью кнопки `submit`;
+`set errors(value: string)` — выводит текст ошибки.
+
+#### События
+
+При вводе данных генерирует событие вида:
+
+`formName.fieldName:change`
+
+При отправке формы генерирует событие вида:
+
+`formName:submit`
+
+---
+
+### Класс `OrderForm`
+
+Форма первого шага заказа.
+
+#### Поля класса
+
+`paymentButtons: HTMLButtonElement[]` — кнопки выбора оплаты;
+`addressInput: HTMLInputElement` — поле адреса.
+
+#### Конструктор
+
+`constructor(events: IEvents, container: HTMLFormElement)` — принимает брокер событий и DOM-элемент формы.
+
+#### Сеттеры
+
+`set payment(value: TPaymentType | '')` — выделяет выбранный способ оплаты классом `button_alt-active`;
+`set address(value: string)` — устанавливает адрес доставки.
+
+---
+
+### Класс `ContactsForm`
+
+Форма второго шага заказа.
+
+#### Поля класса
+
+`emailInput: HTMLInputElement` — поле email;
+`phoneInput: HTMLInputElement` — поле телефона.
+
+#### Конструктор
+
+`constructor(events: IEvents, container: HTMLFormElement)` — принимает брокер событий и DOM-элемент формы.
+
+#### Сеттеры
+
+`set email(value: string)` — устанавливает email;
+`set phone(value: string)` — устанавливает телефон.
+
+---
+
+### Класс `Success`
+
+Компонент успешного оформления заказа.
+
+#### Поля класса
+
+`descriptionElement: HTMLElement` — элемент с суммой заказа;
+`closeButton: HTMLButtonElement` — кнопка закрытия;
+`events: IEvents` — брокер событий.
+
+#### Конструктор
+
+`constructor(events: IEvents, container: HTMLElement)` — принимает брокер событий и DOM-элемент компонента.
+
+#### Сеттеры
+
+`set total(value: number)` — выводит сумму списания.
+
+---
+
+## Слой презентера
+
+### Файл `main.ts`
+
+Файл `main.ts` связывает модели, компоненты представления и API.
+
+В нём создаются:
+
+`events: EventEmitter` — брокер событий;
+`catalog: Catalog` — модель каталога;
+`shoppingCart: ShoppingCart` — модель корзины;
+`buyer: Buyer` — модель покупателя;
+`header: Header` — шапка сайта;
+`gallery: Gallery` — каталог товаров;
+`modal: Modal` — модальное окно;
+`apiCom: ApiCommunication` — слой общения с сервером.
+
+Основные задачи `main.ts`:
+
+* загрузка товаров с сервера;
+* отрисовка каталога;
+* открытие подробного просмотра товара;
+* добавление и удаление товаров из корзины;
+* отображение корзины;
+* открытие форм заказа;
+* валидация данных покупателя;
+* отправка заказа на сервер;
+* показ сообщения об успешной оплате.
+
+---
+
+## Основные события
+
+`catalog:changed` — каталог товаров изменился;
+`catalog:select` — выбран товар для просмотра;
+`card:select` — клик по карточке товара;
+`card:toggle` — добавление или удаление товара из корзины;
+`basket:changed` — корзина изменилась;
+`basket:open` — открытие корзины;
+`basket:delete` — удаление товара из корзины;
+`buyer:changed` — данные покупателя изменились;
+`order:open` — открытие первой формы заказа;
+`order.payment:change` — изменение способа оплаты;
+`order.address:change` — изменение адреса;
+`order:submit` — отправка первой формы;
+`contacts.email:change` — изменение email;
+`contacts.phone:change` — изменение телефона;
+`contacts:submit` — отправка второй формы;
+`success:close` — закрытие окна успешного заказа.
