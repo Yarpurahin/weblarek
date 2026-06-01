@@ -1,41 +1,56 @@
-import {IProduct} from '../../types/index';
+import { IProduct } from '../../types/index';
+import { IEvents } from '../base/Events';
 
 export class ShoppingCart {
-  protected productsToBuy : IProduct[] = [];
+  protected productsToBuy: IProduct[] = [];
 
-  getProductsToBuy () : IProduct[] {
+  constructor(protected events: IEvents) {}
+
+  protected changed(): void {
+    this.events.emit('basket:changed', {
+      products: this.productsToBuy,
+      total: this.getTotalPrice(),
+      count: this.getProductsAmount()
+    });
+  }
+
+  getProductsToBuy(): IProduct[] {
     return this.productsToBuy;
   }
 
-  addProductToCart (product : IProduct) : void {
+  addProductToCart(product: IProduct): void {
+    if (this.isInStock(product.id)) {
+      return;
+    }
+
     this.productsToBuy.push(product);
+    this.changed();
   }
 
   deleteProductFromCart(id: string): void {
     this.productsToBuy = this.productsToBuy.filter(
       (product: IProduct) => product.id !== id
     );
-  }  
 
-  clearCart () : void {
+    this.changed();
+  }
+
+  clearCart(): void {
     this.productsToBuy = [];
+    this.changed();
   }
 
-  getTotalPrice () : number {
-    let total : number = 0;
-    this.productsToBuy.forEach((product) => {
-      total += product.price ?? 0
-    })
-    return total;
+  getTotalPrice(): number {
+    return this.productsToBuy.reduce((total, product) => {
+      return total + (product.price ?? 0);
+    }, 0);
   }
 
-  getProductsAmount () : number {
+  getProductsAmount(): number {
     return this.productsToBuy.length;
   }
 
   isInStock(id: string): boolean {
-    return this.productsToBuy.some((product) => {
-        return product.id === id
-    })
-}
+    return this.productsToBuy.some((product) => product.id === id);
+  }
 }

@@ -1,48 +1,65 @@
-import {IBuyer, TValidationErrors} from '../../types/index';
+import { IBuyer, TValidationErrors } from '../../types/index';
+import { IEvents } from '../base/Events';
 
 export class Buyer {
-  protected buyersData : IBuyer = {
-    payment : '',
-    address : '',
-    email : '',
-    phone : ';'
+  protected buyersData: IBuyer = {
+    payment: '',
+    address: '',
+    email: '',
+    phone: ''
   };
 
-  saveBuyersData (data : Partial<IBuyer>) : void {
-    if (data.payment !== undefined) {this.buyersData.payment = data.payment}
+  constructor(protected events: IEvents) {}
 
-    if (data.address !== undefined) {this.buyersData.address = data.address}
-
-    if (data.email !== undefined) {this.buyersData.email = data.email}
-
-    if (data.phone !== undefined) {this.buyersData.phone = data.phone}
-  }
-
-  getBuyersData () : IBuyer {
-    return this.buyersData
-  }
-
-  clearBuyersData () : void {
+  saveBuyersData(data: Partial<IBuyer>): void {
     this.buyersData = {
-      payment : '',
-      address : '',
-      email : '',
-      phone : ''
-    }
+      ...this.buyersData,
+      ...data
+    };
+
+    this.events.emit('buyer:changed', {
+      data: this.buyersData,
+      errors: this.validateBuyersData()
+    });
   }
 
-  
-  validateBuyersData () : TValidationErrors {
-    const errorObj : TValidationErrors = {}
+  getBuyersData(): IBuyer {
+    return this.buyersData;
+  }
 
-    if (!this.buyersData.email) {errorObj.email = 'Укажите email'}
-    
-    if (!this.buyersData.phone) {errorObj.phone = 'Укажите номер телефона'}
-    
-    if (!this.buyersData.payment) {errorObj.payment = 'Укажите способ оплаты'}
-    
-    if (!this.buyersData.address) {errorObj.address = 'Укажите адрес доставки'}
+  clearBuyersData(): void {
+    this.buyersData = {
+      payment: '',
+      address: '',
+      email: '',
+      phone: ''
+    };
 
-    return errorObj
+    this.events.emit('buyer:changed', {
+      data: this.buyersData,
+      errors: this.validateBuyersData()
+    });
+  }
+
+  validateBuyersData(): TValidationErrors {
+    const errorObj: TValidationErrors = {};
+
+    if (!this.buyersData.email) {
+      errorObj.email = 'Укажите email';
+    }
+
+    if (!this.buyersData.phone) {
+      errorObj.phone = 'Укажите номер телефона';
+    }
+
+    if (!this.buyersData.payment) {
+      errorObj.payment = 'Укажите способ оплаты';
+    }
+
+    if (!this.buyersData.address) {
+      errorObj.address = 'Необходимо указать адрес доставки';
+    }
+
+    return errorObj;
   }
 }

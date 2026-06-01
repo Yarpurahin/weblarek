@@ -1,12 +1,14 @@
-import {ensureElement} from '../../../utils/utils';
-import {categoryMap} from '../../../utils/constants';
-import {ICard, Card} from './Card';
-import {ICardActions} from './CardCatalog';
+import { ensureElement } from '../../../utils/utils';
+import { categoryMap } from '../../../utils/constants';
+import { ICard, Card } from './Card';
+import { ICardActions } from './CardCatalog';
 
 export interface ICardPreview extends ICard {
   category: string;
   image: string;
   description: string;
+  buttonText: string;
+  buttonDisabled: boolean;
 }
 
 export class CardPreview extends Card<ICardPreview> {
@@ -15,7 +17,7 @@ export class CardPreview extends Card<ICardPreview> {
   protected cardDescription: HTMLElement;
   protected cardButton: HTMLButtonElement;
 
-  constructor (protected actions: ICardActions, container: HTMLElement) {
+  constructor(protected actions: ICardActions, container: HTMLElement) {
     super(container);
 
     this.cardCategory = ensureElement<HTMLSpanElement>('.card__category', this.container);
@@ -30,14 +32,27 @@ export class CardPreview extends Card<ICardPreview> {
 
   set category(value: string) {
     this.cardCategory.textContent = value;
+
+    Object.values(categoryMap).forEach((className) => {
+      this.cardCategory.classList.remove(className);
+    });
+
     this.cardCategory.classList.add(categoryMap[value as keyof typeof categoryMap]);
   }
 
   set image(value: string) {
-    this.setImage(this.cardImage, value);
+    this.setImage(this.cardImage, value, this.titleElement.textContent ?? '');
   }
 
   set description(value: string) {
     this.cardDescription.textContent = value;
+  }
+
+  set buttonText(value: string) {
+    this.cardButton.textContent = value;
+  }
+
+  set buttonDisabled(value: boolean) {
+    this.cardButton.disabled = value;
   }
 }

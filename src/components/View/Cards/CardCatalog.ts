@@ -1,6 +1,6 @@
-import {ensureElement} from '../../../utils/utils';
-import {categoryMap} from '../../../utils/constants'
-import {ICard, Card} from './Card'
+import { ensureElement } from '../../../utils/utils';
+import { categoryMap } from '../../../utils/constants';
+import { ICard, Card } from './Card';
 
 export interface ICardCatalog extends ICard {
   category: string;
@@ -17,9 +17,10 @@ export class CardCatalog extends Card<ICardCatalog> {
 
   constructor(protected actions: ICardActions, container: HTMLElement) {
     super(container);
+
     this.cardCategory = ensureElement<HTMLSpanElement>('.card__category', this.container);
     this.cardImage = ensureElement<HTMLImageElement>('.card__image', this.container);
-    
+
     if (actions?.onClick) {
       this.container.addEventListener('click', actions.onClick);
     }
@@ -27,10 +28,15 @@ export class CardCatalog extends Card<ICardCatalog> {
 
   set category(value: string) {
     this.cardCategory.textContent = value;
+
+    Object.values(categoryMap).forEach((className) => {
+      this.cardCategory.classList.remove(className);
+    });
+
     this.cardCategory.classList.add(categoryMap[value as keyof typeof categoryMap]);
   }
 
   set image(value: string) {
-    this.setImage(this.cardImage, value);
+    this.setImage(this.cardImage, value, this.titleElement.textContent ?? '');
   }
 }
