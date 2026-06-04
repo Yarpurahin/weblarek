@@ -39,8 +39,40 @@ const gallery = new Gallery(document.body);
 const header = new Header(events, ensureElement<HTMLElement>('.header'));
 const modal = new Modal(events, ensureElement<HTMLElement>('#modal-container'));
 
-let orderForm: OrderForm | null = null;
-let contactsForm: ContactsForm | null = null;
+const basketTemplate = ensureElement<HTMLTemplateElement>('#basket');
+const basketElement = cloneTemplate<HTMLElement>(basketTemplate);
+const basket = new Basket(events, basketElement);
+
+const previewTemplate = ensureElement<HTMLTemplateElement>('#card-preview');
+const previewElement = cloneTemplate<HTMLElement>(previewTemplate);
+const preview = new CardPreview(
+  {
+    onClick: () => {
+      const product = catalog.getChosenProduct();
+
+      if (!product) {
+        return;
+      }
+
+      events.emit('card:toggle', {
+        id: product.id
+      });
+    }
+  },
+  previewElement
+);
+
+const orderTemplate = ensureElement<HTMLTemplateElement>('#order');
+const orderElement = cloneTemplate<HTMLFormElement>(orderTemplate);
+const orderForm = new OrderForm(events, orderElement);
+
+const contactsTemplate = ensureElement<HTMLTemplateElement>('#contacts');
+const contactsElement = cloneTemplate<HTMLFormElement>(contactsTemplate);
+const contactsForm = new ContactsForm(events, contactsElement);
+
+const successTemplate = ensureElement<HTMLTemplateElement>('#success');
+const successElement = cloneTemplate<HTMLElement>(successTemplate);
+const success = new Success(events, successElement);
 
 function getProductButtonState(product: IProduct) {
   if (product.price === null) {
@@ -93,23 +125,15 @@ function renderCatalog(products: IProduct[]): void {
   });
 }
 
-function renderProductPreview(product: IProduct): void {
-  const previewTemplate = ensureElement<HTMLTemplateElement>('#card-preview');
-  const previewElement = cloneTemplate<HTMLElement>(previewTemplate);
+function renderProductPreview(): void {
+  const product = catalog.getChosenProduct();
 
-  const card = new CardPreview(
-    {
-      onClick: () => {
-        events.emit('card:toggle', {
-          id: product.id
-        });
-      }
-    },
-    previewElement
-  );
+  if (!product) {
+    return;
+  }
 
   modal.render({
-    content: card.render({
+    content: preview.render({
       title: product.title,
       price: product.price,
       category: product.category,
@@ -145,26 +169,24 @@ function createBasketCards(): HTMLElement[] {
   });
 }
 
+function updateBasket(): void {
+  basket.render({
+    items: createBasketCards(),
+    total: shoppingCart.getTotalPrice(),
+    buttonDisabled: shoppingCart.getProductsAmount() === 0
+  });
+}
+
 function renderBasket(): void {
-  const basketTemplate = ensureElement<HTMLTemplateElement>('#basket');
-  const basketElement = cloneTemplate<HTMLElement>(basketTemplate);
-
-  const basket = new Basket(events, basketElement);
-
   modal.render({
-    content: basket.render({
-      items: createBasketCards(),
-      total: shoppingCart.getTotalPrice(),
-      buttonDisabled: shoppingCart.getProductsAmount() === 0
-    })
+    content: basket.render()
   });
 }
 
 function getOrderErrors(): string {
   const errors = buyer.validateBuyersData();
   const errorsArr = [];
-  errorsArr.push(errors.payment);
-  errorsArr.push(errors.address);
+  errorsArr.push([errors.payment, errors.address].filter(Boolean).join(', '));
 
   for (let i of errorsArr) {
     if (i != undefined) return String(i);
@@ -200,29 +222,12 @@ function isContactsValid(): boolean {
 }
 
 function renderOrderForm(): void {
-  const orderTemplate = ensureElement<HTMLTemplateElement>('#order');
-  const orderElement = cloneTemplate<HTMLFormElement>(orderTemplate);
-
-  orderForm = new OrderForm(events, orderElement);
-  contactsForm = null;
-
-  const data = buyer.getBuyersData();
-
   modal.render({
-    content: orderForm.render({
-      payment: data.payment,
-      address: data.address,
-      valid: isOrderValid(),
-      errors: getOrderErrors()
-    })
+    content: orderForm.render()
   });
 }
 
 function updateOrderForm(): void {
-  if (!orderForm) {
-    return;
-  }
-
   const data = buyer.getBuyersData();
 
   orderForm.render({
@@ -234,29 +239,12 @@ function updateOrderForm(): void {
 }
 
 function renderContactsForm(): void {
-  const contactsTemplate = ensureElement<HTMLTemplateElement>('#contacts');
-  const contactsElement = cloneTemplate<HTMLFormElement>(contactsTemplate);
-
-  contactsForm = new ContactsForm(events, contactsElement);
-  orderForm = null;
-
-  const data = buyer.getBuyersData();
-
   modal.render({
-    content: contactsForm.render({
-      email: data.email,
-      phone: data.phone,
-      valid: isContactsValid(),
-      errors: getContactsErrors()
-    })
+    content: contactsForm.render()
   });
 }
 
 function updateContactsForm(): void {
-  if (!contactsForm) {
-    return;
-  }
-
   const data = buyer.getBuyersData();
 
   contactsForm.render({
@@ -268,11 +256,6 @@ function updateContactsForm(): void {
 }
 
 function renderSuccess(total: number): void {
-  const successTemplate = ensureElement<HTMLTemplateElement>('#success');
-  const successElement = cloneTemplate<HTMLElement>(successTemplate);
-
-  const success = new Success(events, successElement);
-
   modal.render({
     content: success.render({
       total
@@ -294,8 +277,8 @@ events.on<{ id: string }>('card:select', (data) => {
   catalog.setChosenProduct(product);
 });
 
-events.on<{ product: IProduct }>('catalog:select', (data) => {
-  renderProductPreview(data.product);
+events.on('catalog:select', () => {
+  renderProductPreview();
 });
 
 events.on<{ id: string }>('card:toggle', (data) => {
@@ -318,6 +301,8 @@ events.on<{ count: number }>('basket:changed', (data) => {
   header.render({
     counter: data.count
   });
+
+  updateBasket();
 });
 
 events.on('basket:open', () => {
@@ -326,7 +311,6 @@ events.on('basket:open', () => {
 
 events.on<{ id: string }>('basket:delete', (data) => {
   shoppingCart.deleteProductFromCart(data.id);
-  renderBasket();
 });
 
 events.on('order:open', () => {
@@ -346,11 +330,6 @@ events.on<{ value: string }>('order.address:change', (data) => {
 });
 
 events.on('order:submit', () => {
-  if (!isOrderValid()) {
-    updateOrderForm();
-    return;
-  }
-
   renderContactsForm();
 });
 
@@ -367,13 +346,6 @@ events.on<{ value: string }>('contacts.phone:change', (data) => {
 });
 
 events.on('contacts:submit', async () => {
-  const errors = buyer.validateBuyersData();
-
-  if (Object.keys(errors).length > 0) {
-    updateContactsForm();
-    return;
-  }
-
   try {
     const response = await apiCom.postProducts({
       ...buyer.getBuyersData(),
@@ -386,7 +358,7 @@ events.on('contacts:submit', async () => {
 
     renderSuccess(response.total);
   } catch (error) {
-    contactsForm?.render({
+    contactsForm.render({
       email: buyer.getBuyersData().email,
       phone: buyer.getBuyersData().phone,
       valid: true,
@@ -403,6 +375,8 @@ events.on('buyer:changed', () => {
 events.on('success:close', () => {
   modal.close();
 });
+
+updateBasket();
 
 apiCom
   .getProducts()
